@@ -15,7 +15,7 @@ The plugin automatically intercepts task creation and updates (via Vikunja's int
 * **Smart Auto-Tagging**: Searches for keywords in the task title (e.g., "fix", "expense", "meeting") and dynamically assigns the corresponding Vikunja labels to the task.
 * **Auto-Assignment**: Automatically assigns the task to the user who created it, preventing orphaned tasks. (Can be disabled)
 * **Fallback Description and Priority**: Inserts a default text (e.g., "Bo...") into the description if left empty, and sets a default priority if none is provided.
-* **Absolute Idempotency**: Prevents duplicates. Natively checks the XORM database to ensure labels are not duplicated on the same task.
+* **Absolute Idempotency**: Prevents duplicates. Natively checks the database via XORM to ensure labels are not duplicated on the same task.
 * **Plug & Play Without Hardcoded IDs**: Uses the **label name** directly to search for it in the database. No need to retrieve obscure numeric IDs!
 
 ### Installation
@@ -27,35 +27,36 @@ The plugin automatically intercepts task creation and updates (via Vikunja's int
      dir: "plugins"
      loader: "yaegi"
    ```
-2. Clone this repository and move the `tonno_sanitizer_tagger.go` file and the `TonnoSanitizerTagger/` directory into your instance's plugins folder:
+2. Clone this repository and move the `main.go` file into your instance's plugins folder under a subdirectory (e.g., `plugins/tonno-sanitizer-tagger-plugin/`):
    ```text
    plugins/
-   ├── tonno_sanitizer_tagger.go
-   └── TonnoSanitizerTagger/
-       └── config.json
+   └── tonno-sanitizer-tagger-plugin/
+       └── main.go
    ```
-3. (Optional) Rename the `config.example.json` file to `config.json` and customize your keywords and options.
-4. Restart the Vikunja backend.
+3. Restart the Vikunja backend.
 
-### Configuration (`config.json`)
+### Configuration
 
-The plugin features dynamic capabilities. The `config.json` file is read **at every event**! This means you can change rules *on the fly* without ever having to restart Vikunja.
+This plugin does not require any external configuration files. If you want to customize the auto-tagging keywords, default description, or default priority, you can modify the configuration structure directly at the top of `main.go`:
 
-```json
-{
-  "features": {
-    "enable_auto_assign": true,
-    "default_description": "Bo...",
-    "default_priority": 3
-  },
-  "tag_mappings": {
-    "Fix o Bug": ["bug", "error", "fix", "crash", "problem"],
-    "Spesa": ["buy", "expense", "get", "order"]
-  }
+```go
+var config = struct {
+	EnableAutoAssign   bool
+	DefaultDescription string
+	DefaultPriority    int64
+	TagMappings        map[string][]string
+}{
+	EnableAutoAssign:   true,
+	DefaultDescription: "Bo...",
+	DefaultPriority:    3,
+	TagMappings: map[string][]string{
+		"Fix o Bug": {"bug", "error", "fix", "crash", "problem", "errore", "problema"},
+		"Spesa":     {"buy", "expense", "get", "order", "comprare", "spesa", "prendere", "acquistare", "ordinare"},
+	},
 }
 ```
 
-* `"tag_mappings"`: The key (e.g., `"Fix o Bug"`) **must exactly match the title of the label already created within your Vikunja instance**. The values in the array are the keywords that, if found in the task title, will trigger the automatic assignment of that label.
+* `TagMappings`: The key (e.g., `"Fix o Bug"`) **must exactly match the title of the label already created within your Vikunja instance**. The values in the array are the keywords that, if found in the task title, will trigger the automatic assignment of that label.
 
 ### License
 
@@ -86,35 +87,36 @@ Il plugin intercetta automaticamente la creazione e l'aggiornamento dei task (tr
      dir: "plugins"
      loader: "yaegi"
    ```
-2. Clona questo repository e sposta il file `tonno_sanitizer_tagger.go` e la directory `TonnoSanitizerTagger/` all'interno della cartella dei plugin della tua istanza:
+2. Clona questo repository e sposta il file `main.go` all'interno della cartella dei plugin della tua istanza in una sottocartella dedicata (es. `plugins/tonno-sanitizer-tagger-plugin/`):
    ```text
    plugins/
-   ├── tonno_sanitizer_tagger.go
-   └── TonnoSanitizerTagger/
-       └── config.json
+   └── tonno-sanitizer-tagger-plugin/
+       └── main.go
    ```
-3. (Opzionale) Rinomina il file `config.example.json` in `config.json` e personalizza le tue parole chiave e opzioni.
-4. Riavvia il backend di Vikunja.
+3. Riavvia il backend di Vikunja.
 
-### Configurazione (`config.json`)
+### Configurazione
 
-Il plugin è dotato di super poteri dinamici. Viene letto il file `config.json` **a ogni evento**! Questo significa che puoi cambiare le regole *al volo* senza dover mai riavviare Vikunja.
+Questo plugin non richiede alcun file di configurazione esterno. Se desideri personalizzare le parole chiave di auto-tagging, la descrizione predefinita o la priorità, puoi modificare la struttura di configurazione direttamente all'inizio del file `main.go`:
 
-```json
-{
-  "features": {
-    "enable_auto_assign": true,
-    "default_description": "Bo...",
-    "default_priority": 3
-  },
-  "tag_mappings": {
-    "Fix o Bug": ["bug", "errore", "fix", "crash", "problema"],
-    "Spesa": ["comprare", "spesa", "prendere", "acquistare", "ordinare"]
-  }
+```go
+var config = struct {
+	EnableAutoAssign   bool
+	DefaultDescription string
+	DefaultPriority    int64
+	TagMappings        map[string][]string
+}{
+	EnableAutoAssign:   true,
+	DefaultDescription: "Bo...",
+	DefaultPriority:    3,
+	TagMappings: map[string][]string{
+		"Fix o Bug": {"bug", "error", "fix", "crash", "problem", "errore", "problema"},
+		"Spesa":     {"buy", "expense", "get", "order", "comprare", "spesa", "prendere", "acquistare", "ordinare"},
+	},
 }
 ```
 
-* `"tag_mappings"`: La chiave (es. `"Fix o Bug"`) **deve corrispondere esattamente al titolo dell'etichetta già creata all'interno del tuo Vikunja**. I valori nell'array sono le parole chiave che, se trovate nel titolo del task, scateneranno l'assegnazione automatica di quell'etichetta.
+* `TagMappings`: La chiave (es. `"Fix o Bug"`) **deve corrispondere esattamente al titolo dell'etichetta già creata all'interno del tuo Vikunja**. I valori nell'array sono le parole chiave che, se trovate nel titolo del task, scateneranno l'assegnazione automatica di quell'etichetta.
 
 ### Licenza
 
